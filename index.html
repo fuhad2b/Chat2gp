@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d9bf0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Chat2Go</title>
+<style>
+:root{--bg:#fff;--ink:#111;--card:#fff;--me:#1d9bf0;--other:#e9e9ee;--mut:#666;--line:#ddd}
+@media (prefers-color-scheme:dark){:root{--bg:#15151a;--ink:#f3f3f3;--card:#202027;--other:#2d2d36;--mut:#9a9aa5;--line:#3a3a45}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.screen{display:none;flex-direction:column;height:100%;padding:0 14px}
+.screen.on{display:flex}
+header{padding:12px 0;display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px}
+header .sp{margin-left:auto}
+input,button{font:inherit;color:inherit}
+input{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);width:100%}
+button{background:var(--me);color:#fff;border:0;border-radius:999px;padding:11px 18px;cursor:pointer}
+button.alt{background:transparent;border:1px solid var(--line);color:var(--ink);padding:7px 12px;font-size:14px}
+#auth{justify-content:center;gap:10px;max-width:380px;margin:auto;text-align:center}
+#er{color:#d33;font-size:14px;min-height:18px}
+.row{display:block;width:100%;text-align:left;background:var(--other);color:var(--ink);border-radius:14px;margin-bottom:8px}
+#cl{flex:1;overflow-y:auto;margin-top:10px;color:var(--mut)}
+.add{display:flex;gap:8px}
+#msgs{flex:1;overflow-y:auto;padding:10px 0;display:flex;flex-direction:column;gap:8px}
+.m{max-width:80%;padding:8px 12px;border-radius:16px;background:var(--other);align-self:flex-start;overflow-wrap:anywhere}
+.m.me{background:var(--me);color:#fff;align-self:flex-end}
+.m b{display:block;font-size:11px;opacity:.7;margin-bottom:2px}
+.m i{display:block;height:3px;margin-top:6px;border-radius:3px;background:currentColor;opacity:.45;transform-origin:left}
+.m img{display:block;max-width:100%;border-radius:10px}
+.vide{margin:auto;color:var(--mut);text-align:center;font-size:14px}
+form{display:flex;gap:8px;padding:10px 0;align-items:center}
+form input{flex:1;border-radius:999px}
+#pv{display:none;position:fixed;inset:0;z-index:5;background:rgba(0,0,0,.92);flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;color:#fff}
+#pc{max-width:100%;max-height:44%;border-radius:12px}
+#fxs,#sts,#pv>div:last-child{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#pv button.alt{color:#fff;border-color:#888}
+#leg{width:min(100%,320px);text-align:center;background:transparent;color:#fff;border-color:#888;border-radius:999px}
+</style>
+</head>
+<body>
+
+<section id="auth" class="screen on">
+  <div class="logo"></div>
+  <h1 style="margin:0">Chat2Go</h1>
+  <input id="ps" placeholder="Pseudo (pour l’inscription)" autocapitalize="none" maxlength="15">
+  <input id="em" type="email" placeholder="Email" autocapitalize="none">
+  <input id="pw" type="password" placeholder="Mot de passe (6 caractères min.)">
+  <div id="er"></div>
+  <button id="su">Créer un compte</button>
+  <button id="si" class="alt">Se connecter</button>
+</section>
+
+<section id="home" class="screen">
+  <header><span class="logo"></span>Chat2Go<span class="sp" id="moi"></span><button class="alt" id="out">Quitter</button></header>
+  <div class="add"><input id="fp" placeholder="Pseudo d’un ami" autocapitalize="none"><button id="ad">Ajouter</button></div>
+  <div id="cl"></div>
+</section>
+
+<section id="chat" class="screen">
+  <header><button class="alt" id="bk">←</button><span id="cn"></span></header>
+  <div id="msgs"></div>
+  <form id="f"><button type="button" class="alt" id="ph">📷</button><input id="file" type="file" accept="image/*" capture="environment" hidden><input id="t" placeholder="Message…" maxlength="300" autocomplete="off"><button>Envoyer</button></form>
+</section>
+
+<div id="pv"><canvas id="pc"></canvas><div id="fxs"></div><div id="sts"></div><input id="leg" placeholder="Légende…" maxlength="40"><div><button type="button" id="pn" class="alt">Annuler</button><button type="button" id="po">Envoyer</button></div></div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut,updateProfile} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,setDoc,getDoc,collection,query,where,onSnapshot,addDoc,updateDoc,deleteDoc,orderBy,limit} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Configuration Firebase du projet chat2go-2b
+const firebaseConfig={apiKey:"AIzaSyA0csK-ivtqwNi5WLV9nQ42oMrLJry92dg",authDomain:"chat2go-2b.firebaseapp.com",projectId:"chat2go-2b",storageBucket:"chat2go-2b.firebasestorage.app",messagingSenderId:"103840196617",appId:"1:103840196617:web:f0f9081299190e1a27f0d8"};
+
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const $=s=>document.getElementById(s);
+const show=n=>["auth","home","chat"].forEach(s=>$(s).classList.toggle("on",s===n));
+const LOGO='<svg width="34" height="34" viewBox="0 0 40 40" aria-label="Logo Chat2Go"><path d="M8 4h24a6 6 0 0 1 6 6v15a6 6 0 0 1-6 6H20l-9 7v-7H8a6 6 0 0 1-6-6V10a6 6 0 0 1 6-6z" fill="#1d9bf0"/><text x="20" y="24" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="17" fill="#fff">2</text></svg>';
+document.querySelectorAll(".logo").forEach(e=>e.innerHTML=LOGO);
+let me=null,pseudo="",cid=null,unsubC=null,unsubM=null,list=[];const vus=new Set(),del=new Set();
+
+const err=t=>{$("er").textContent=t};
+const msg=e=>({"auth/invalid-credential":"Email ou mot de passe incorrect","auth/email-already-in-use":"Cet email est déjà utilisé","auth/weak-password":"Mot de passe trop court (6 minimum)","auth/invalid-email":"Email invalide"}[e.code]||"Erreur : "+(e.code||e.message));
+
+$("su").onclick=async()=>{err("");const p=$("ps").value.trim().toLowerCase();
+ if(!/^[a-z0-9_]{3,15}$/.test(p))return err("Pseudo : 3 à 15 lettres, chiffres ou _");
+ try{const c=await createUserWithEmailAndPassword(auth,$("em").value.trim(),$("pw").value);
+  try{await setDoc(doc(db,"pseudos",p),{uid:c.user.uid})}catch(e){await c.user.delete();return err("Ce pseudo est déjà pris")}
+  await updateProfile(c.user,{displayName:p});pseudo=p;$("moi").textContent=p}catch(e){err(msg(e))}};
+$("si").onclick=async()=>{err("");try{await signInWithEmailAndPassword(auth,$("em").value.trim(),$("pw").value)}catch(e){err(msg(e))}};
+$("out").onclick=()=>signOut(auth);
+
+onAuthStateChanged(auth,u=>{
+ unsubC&&unsubC();unsubM&&unsubM();cid=null;
+ if(!u){me=null;show("auth");return}
+ me=u;pseudo=u.displayName||"";$("moi").textContent=pseudo;show("home");
+ unsubC=onSnapshot(query(collection(db,"chats"),where("members","array-contains",u.uid)),s=>{
+  $("cl").textContent="";
+  s.docs.forEach(d=>{const c=d.data(),o=c.members.find(x=>x!==u.uid),b=document.createElement("button");b.className="row";b.textContent="💬 "+((c.names&&c.names[o])||"Ami");b.onclick=()=>ouvrirChat(d.id,(c.names&&c.names[o])||"Ami");$("cl").appendChild(b)});
+  if(!s.size)$("cl").textContent="Ajoute un ami avec son pseudo pour commencer."})});
+
+$("ad").onclick=async()=>{const p=$("fp").value.trim().toLowerCase();if(!p)return;
+ try{const s=await getDoc(doc(db,"pseudos",p));if(!s.exists())return alert("Pseudo introuvable");
+  const f=s.data().uid;if(f===me.uid)return alert("C’est ton propre pseudo !");
+  const id=[me.uid,f].sort().join("_");
+  await setDoc(doc(db,"chats",id),{members:[me.uid,f],names:{[me.uid]:pseudo,[f]:p}},{merge:true});
+  $("fp").value="";ouvrirChat(id,p)}catch(e){alert("Erreur : "+(e.code||e.message))}};
+
+function ouvrirChat(id,nom){cid=id;$("cn").textContent=nom;list=[];vus.clear();del.clear();show("chat");unsubM&&unsubM();
+ unsubM=onSnapshot(query(collection(db,"chats",id,"msgs"),orderBy("ts"),limit(60)),s=>{
+  list=s.docs.map(d=>{const x={...d.data(),id:d.id};if(!x.seen&&vus.has(d.id))x.seen=Date.now();return x});render()})}
+$("bk").onclick=()=>{unsubM&&unsubM();cid=null;show("home")};
+
+const alive=m=>m.ts+864e5>Date.now()&&!(m.seen&&Date.now()>m.seen+5000);
+const ref=id=>doc(db,"chats",cid,"msgs",id);
+function render(){
+ if(!cid)return;
+ const box=$("msgs"),bas=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+ list.filter(m=>!alive(m)&&!del.has(m.id)).forEach(m=>{del.add(m.id);deleteDoc(ref(m.id)).catch(()=>{})});
+ list=list.filter(alive);box.textContent="";
+ if(!list.length){const d=document.createElement("div");d.className="vide";d.textContent="Aucun message. Écris-en un : il disparaîtra une fois lu.";box.appendChild(d)}
+ list.forEach(m=>{
+  const mine=m.from===me.uid;
+  if(!mine&&!m.seen&&!vus.has(m.id)&&document.visibilityState==="visible"){vus.add(m.id);m.seen=Date.now();updateDoc(ref(m.id),{seen:m.seen}).catch(()=>{})}
+  const d=document.createElement("div");d.className="m"+(mine?" me":"");
+  const b=document.createElement("b");b.textContent=mine?"Toi"+(m.seen?" · Vu ✓":" · Envoyé"):(m.name||"Ami");
+  const ok=typeof m.img==="string"&&m.img.startsWith("data:image/jpeg;base64,");
+  const p=ok?Object.assign(document.createElement("img"),{src:m.img,alt:"Photo"}):document.createElement("span");if(!ok)p.textContent=m.text||"";
+  const i=document.createElement("i");i.style.transform="scaleX("+(m.seen?Math.max(0,(m.seen+5000-Date.now())/5000):1)+")";
+  d.append(b,p,i);box.appendChild(d)});
+ if(bas)box.scrollTop=box.scrollHeight}
+setInterval(render,500);
+
+const envoyer=m=>addDoc(collection(db,"chats",cid,"msgs"),{from:me.uid,name:pseudo,ts:Date.now(),...m}).catch(e=>alert("Envoi impossible : "+(e.code||e.message)));
+$("f").onsubmit=e=>{e.preventDefault();const text=$("t").value.trim();if(!text)return;$("t").value="";envoyer({text})};
+
+/* Photos + filtres */
+const FX={"Normal":null,"N&B":(p,i)=>{const y=.3*p[i]+.59*p[i+1]+.11*p[i+2];p[i]=p[i+1]=p[i+2]=y},
+"Sépia":(p,i)=>{const r=p[i],g=p[i+1],b=p[i+2];p[i]=.393*r+.769*g+.189*b;p[i+1]=.349*r+.686*g+.168*b;p[i+2]=.272*r+.534*g+.131*b},
+"Chaud":(p,i)=>{p[i]=p[i]*1.1+10;p[i+2]=p[i+2]*.9},"Froid":(p,i)=>{p[i]=p[i]*.9;p[i+2]=p[i+2]*1.1+10},
+"Contraste":(p,i)=>{for(let k=0;k<3;k++)p[i+k]=(p[i+k]-128)*1.3+128},
+"Néon":(p,i)=>{const m=(p[i]+p[i+1]+p[i+2])/3;for(let k=0;k<3;k++)p[i+k]=m+(p[i+k]-m)*2.3;p[i+2]+=25},
+"Vintage":(p,i,x,y,w,h)=>{const dx=x/w-.5,dy=y/h-.5,v=1-Math.min(1,(dx*dx+dy*dy)*2.2);p[i]=(p[i]*.9+30)*v;p[i+1]=(p[i+1]*.85+20)*v;p[i+2]=(p[i+2]*.7+30)*v},
+"Doré":(p,i)=>{p[i]=p[i]*1.15+25;p[i+1]=p[i+1]*1.05+12;p[i+2]=p[i+2]*.7},
+"Arc-en-ciel":(p,i,x,y,w)=>{const a=x/w*6;p[i]=p[i]*.72+(128+127*Math.sin(a))*.28;p[i+1]=p[i+1]*.72+(128+127*Math.sin(a+2.1))*.28;p[i+2]=p[i+2]*.72+(128+127*Math.sin(a+4.2))*.28},
+"Négatif":(p,i)=>{p[i]=255-p[i];p[i+1]=255-p[i+1];p[i+2]=255-p[i+2]}};
+const tmp=(c,d)=>{const s=document.createElement("canvas");s.width=Math.ceil(c.width/d);s.height=Math.ceil(c.height/d);s.getContext("2d").drawImage(c,0,0,s.width,s.height);return s};
+const POST={"Pixel":(x,c,w,h)=>{const s=tmp(c,14);x.imageSmoothingEnabled=false;x.drawImage(s,0,0,s.width,s.height,0,0,w,h)},
+"Glitch":(x,c,w,h)=>{const o=tmp(c,1);for(let k=0;k<9;k++){const y=Math.random()*h,bh=h*(.02+Math.random()*.06),dx=(Math.random()-.5)*w*.12;x.drawImage(o,0,y,w,bh,dx,y,w,bh)}x.globalAlpha=.35;x.globalCompositeOperation="lighter";x.drawImage(o,6,0);x.globalAlpha=1;x.globalCompositeOperation="source-over"},
+"Rêve":(x,c,w,h)=>{const s=tmp(c,8);x.globalAlpha=.5;x.globalCompositeOperation="screen";x.drawImage(s,0,0,w,h);x.globalAlpha=1;x.globalCompositeOperation="source-over"}};
+let base=null,fx="Normal",st=[],sel=null;
+function appliquer(){const pc=$("pc"),w=base.width,h=base.height;pc.width=w;pc.height=h;const x=pc.getContext("2d");x.drawImage(base,0,0);const f=FX[fx];
+ if(f){const d=x.getImageData(0,0,w,h),p=d.data;for(let i=0;i<p.length;i+=4)f(p,i,(i/4)%w,Math.floor(i/4/w),w,h);x.putImageData(d,0,0)}
+ if(POST[fx])POST[fx](x,pc,w,h);
+ st.forEach(s=>{x.font=Math.round(w*.2)+"px serif";x.textAlign="center";x.textBaseline="middle";x.fillText(s.e,s.x*w,s.y*h)});
+ const t=$("leg").value.trim();if(t){x.fillStyle="rgba(0,0,0,.55)";x.fillRect(0,h*.82,w,h*.1);x.fillStyle="#fff";x.font="bold "+Math.round(h*.055)+"px system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(t,w/2,h*.87,w*.94)}}
+function ouvrir(c){base=c;fx="Normal";st=[];sel=null;$("leg").value="";$("fxs").textContent="";
+ Object.keys({...FX,...POST}).forEach(n=>{const b=document.createElement("button");b.type="button";b.className="alt";b.textContent=n;b.onclick=()=>{fx=n;appliquer()};$("fxs").appendChild(b)});
+ $("sts").textContent="";["🐶","👑","😎","❤️","✨","🌈","🔥","🎀","😈","🌸","↩"].forEach(e=>{const b=document.createElement("button");b.type="button";b.className="alt";b.textContent=e;b.onclick=()=>{if(e==="↩"){st.pop();appliquer()}else sel=e};$("sts").appendChild(b)});
+ appliquer();$("pv").style.display="flex"}
+$("ph").onclick=()=>$("file").click();
+$("file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+ const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,480/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ouvrir(c)};im.src=r.result};r.readAsDataURL(f)};
+$("pc").onclick=e=>{if(!sel)return;const r=e.target.getBoundingClientRect();st.push({e:sel,x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height});appliquer()};
+$("leg").oninput=()=>appliquer();
+$("pn").onclick=()=>{$("pv").style.display="none"};
+$("po").onclick=()=>{envoyer({text:"",img:$("pc").toDataURL("image/jpeg",.6)});$("pv").style.display="none"};
+
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
