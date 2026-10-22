@@ -3,175 +3,374 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1d9bf0">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
 <title>Chat2Go</title>
 <style>
-:root{--bg:#fff;--ink:#111;--card:#fff;--me:#1d9bf0;--other:#e9e9ee;--mut:#666;--line:#ddd}
-@media (prefers-color-scheme:dark){:root{--bg:#15151a;--ink:#f3f3f3;--card:#202027;--other:#2d2d36;--mut:#9a9aa5;--line:#3a3a45}}
-*{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-.screen{display:none;flex-direction:column;height:100%;padding:0 14px}
-.screen.on{display:flex}
-header{padding:12px 0;display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px}
-header .sp{margin-left:auto}
-input,button{font:inherit;color:inherit}
-input{padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);width:100%}
-button{background:var(--me);color:#fff;border:0;border-radius:999px;padding:11px 18px;cursor:pointer}
-button.alt{background:transparent;border:1px solid var(--line);color:var(--ink);padding:7px 12px;font-size:14px}
-#auth{justify-content:center;gap:10px;max-width:380px;margin:auto;text-align:center}
-#er{color:#d33;font-size:14px;min-height:18px}
-.row{display:block;width:100%;text-align:left;background:var(--other);color:var(--ink);border-radius:14px;margin-bottom:8px}
-#cl{flex:1;overflow-y:auto;margin-top:10px;color:var(--mut)}
-.add{display:flex;gap:8px}
-#msgs{flex:1;overflow-y:auto;padding:10px 0;display:flex;flex-direction:column;gap:8px}
-.m{max-width:80%;padding:8px 12px;border-radius:16px;background:var(--other);align-self:flex-start;overflow-wrap:anywhere}
-.m.me{background:var(--me);color:#fff;align-self:flex-end}
-.m b{display:block;font-size:11px;opacity:.7;margin-bottom:2px}
-.m i{display:block;height:3px;margin-top:6px;border-radius:3px;background:currentColor;opacity:.45;transform-origin:left}
-.m img{display:block;max-width:100%;border-radius:10px}
-.vide{margin:auto;color:var(--mut);text-align:center;font-size:14px}
-form{display:flex;gap:8px;padding:10px 0;align-items:center}
-form input{flex:1;border-radius:999px}
-#pv{display:none;position:fixed;inset:0;z-index:5;background:rgba(0,0,0,.92);flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;color:#fff}
-#pc{max-width:100%;max-height:44%;border-radius:12px}
-#fxs,#sts,#pv>div:last-child{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-#pv button.alt{color:#fff;border-color:#888}
-#leg{width:min(100%,320px);text-align:center;background:transparent;color:#fff;border-color:#888;border-radius:999px}
+  :root {
+    --blue: #2f5bff;
+    --blue-dark: #1f3fcc;
+    --ink: #14171f;
+    --muted: #6b7280;
+    --paper: #f4f6fb;
+    --white: #ffffff;
+    --line: #dfe3ee;
+    --warn: #d9363e;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .hidden { display: none !important; }
+  button { font: inherit; cursor: pointer; border: 0; }
+  input, select { font: inherit; }
+
+  /* Écran de connexion */
+  #auth { min-height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 28px; max-width: 420px; margin: 0 auto; }
+  .logo { width: 84px; height: 84px; background: var(--blue); color: #fff; border-radius: 26px 26px 26px 6px; display: grid; place-items: center; font-size: 44px; font-weight: 800; margin-bottom: 18px; }
+  #auth h1 { font-size: 34px; letter-spacing: -0.5px; }
+  #auth p.sub { color: var(--muted); margin: 6px 0 24px; }
+  .field { width: 100%; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--white); margin-bottom: 10px; }
+  .field:focus { outline: 2px solid var(--blue); border-color: transparent; }
+  .btn { width: 100%; padding: 14px; border-radius: 14px; background: var(--blue); color: #fff; font-weight: 700; }
+  .btn:active { background: var(--blue-dark); }
+  .link { background: none; color: var(--blue); font-weight: 600; padding: 14px; width: 100%; }
+  #authError, #appError { color: var(--warn); font-size: 14px; min-height: 20px; margin-bottom: 8px; }
+
+  /* Application */
+  #app { height: 100%; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--white); border-bottom: 1px solid var(--line); }
+  header .mini { width: 34px; height: 34px; border-radius: 11px 11px 11px 3px; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 800; }
+  header h2 { font-size: 18px; flex: 1; }
+  header .small { background: none; color: var(--muted); font-size: 14px; padding: 6px; }
+
+  #contacts { flex: 1; overflow-y: auto; padding: 12px; }
+  .contact { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--white); border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 20px; line-height: 1.5; }
+
+  #chat { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { max-width: 78%; padding: 10px 13px; border-radius: 18px; line-height: 1.35; word-wrap: break-word; }
+  .msg.mine { align-self: flex-end; background: var(--blue); color: #fff; border-bottom-right-radius: 5px; }
+  .msg.theirs { align-self: flex-start; background: var(--white); border-bottom-left-radius: 5px; }
+  .msg img { display: block; max-width: 100%; border-radius: 12px; margin-bottom: 6px; }
+  .msg .hint { display: block; font-size: 11px; opacity: .65; margin-top: 4px; }
+
+  #composer { background: var(--white); border-top: 1px solid var(--line); padding: 10px; }
+  #preview { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  #preview img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
+  #preview select { flex: 1; padding: 8px; border-radius: 10px; border: 1.5px solid var(--line); }
+  #preview .cancel { background: none; color: var(--warn); font-size: 22px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row .field { margin: 0; flex: 1; }
+  .icon { width: 44px; height: 44px; border-radius: 50%; background: var(--paper); font-size: 20px; flex: none; }
+  .send { width: 44px; height: 44px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 18px; flex: none; }
 </style>
 </head>
 <body>
 
-<section id="auth" class="screen on">
-  <div class="logo"></div>
-  <h1 style="margin:0">Chat2Go</h1>
-  <input id="ps" placeholder="Pseudo (pour l’inscription)" autocapitalize="none" maxlength="15">
-  <input id="em" type="email" placeholder="Email" autocapitalize="none">
-  <input id="pw" type="password" placeholder="Mot de passe (6 caractères min.)">
-  <div id="er"></div>
-  <button id="su">Créer un compte</button>
-  <button id="si" class="alt">Se connecter</button>
+<!-- Connexion / inscription -->
+<section id="auth">
+  <div class="logo">2</div>
+  <h1>Chat2Go</h1>
+  <p class="sub">Des messages et des photos qui disparaissent après lecture.</p>
+  <input id="pseudo" class="field hidden" placeholder="Ton pseudo" autocomplete="nickname">
+  <input id="email" class="field" type="email" placeholder="Adresse e-mail" autocomplete="email">
+  <input id="password" class="field" type="password" placeholder="Mot de passe (6 caractères minimum)" autocomplete="current-password">
+  <div id="authError"></div>
+  <button id="authSubmit" class="btn">Se connecter</button>
+  <button id="authToggle" class="link">Pas de compte ? Créer un compte</button>
 </section>
 
-<section id="home" class="screen">
-  <header><span class="logo"></span>Chat2Go<span class="sp" id="moi"></span><button class="alt" id="out">Quitter</button></header>
-  <div class="add"><input id="fp" placeholder="Pseudo d’un ami" autocapitalize="none"><button id="ad">Ajouter</button></div>
-  <div id="cl"></div>
-</section>
+<!-- Application -->
+<section id="app" class="hidden">
+  <header>
+    <button id="back" class="small hidden">‹ Retour</button>
+    <div class="mini">2</div>
+    <h2 id="title">Chat2Go</h2>
+    <button id="logout" class="small">Déconnexion</button>
+  </header>
 
-<section id="chat" class="screen">
-  <header><button class="alt" id="bk">←</button><span id="cn"></span></header>
-  <div id="msgs"></div>
-  <form id="f"><button type="button" class="alt" id="ph">📷</button><input id="file" type="file" accept="image/*" capture="environment" hidden><input id="t" placeholder="Message…" maxlength="300" autocomplete="off"><button>Envoyer</button></form>
-</section>
+  <div id="contacts"></div>
 
-<div id="pv"><canvas id="pc"></canvas><div id="fxs"></div><div id="sts"></div><input id="leg" placeholder="Légende…" maxlength="40"><div><button type="button" id="pn" class="alt">Annuler</button><button type="button" id="po">Envoyer</button></div></div>
+  <div id="chat" class="hidden">
+    <div id="messages"></div>
+    <div id="composer">
+      <div id="appError"></div>
+      <div id="preview" class="hidden">
+        <img id="previewImg" alt="Aperçu de la photo">
+        <select id="filter">
+          <option value="none">Sans filtre</option>
+          <option value="grayscale(1) contrast(1.1)">Noir et blanc</option>
+          <option value="sepia(0.9)">Sépia</option>
+          <option value="saturate(1.8) contrast(1.1)">Vif</option>
+          <option value="hue-rotate(160deg) saturate(1.4)">Océan</option>
+          <option value="blur(1.5px) brightness(1.1)">Rêve</option>
+        </select>
+        <button id="cancelPhoto" class="cancel" aria-label="Retirer la photo">✕</button>
+      </div>
+      <div class="row">
+        <button id="photoBtn" class="icon" aria-label="Ajouter une photo">📷</button>
+        <input id="photoInput" type="file" accept="image/*" class="hidden">
+        <input id="text" class="field" placeholder="Écris un message" autocomplete="off">
+        <button id="send" class="send" aria-label="Envoyer">➤</button>
+      </div>
+    </div>
+  </div>
+</section>
 
 <script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut,updateProfile} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getFirestore,doc,setDoc,getDoc,collection,query,where,onSnapshot,addDoc,updateDoc,deleteDoc,orderBy,limit} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, collection, onSnapshot, addDoc, deleteDoc,
+    query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
-// Configuration Firebase du projet chat2go-2b
-const firebaseConfig={apiKey:"AIzaSyA0csK-ivtqwNi5WLV9nQ42oMrLJry92dg",authDomain:"chat2go-2b.firebaseapp.com",projectId:"chat2go-2b",storageBucket:"chat2go-2b.firebasestorage.app",messagingSenderId:"103840196617",appId:"1:103840196617:web:f0f9081299190e1a27f0d8"};
+  const firebaseConfig = {
+    apiKey: "AIzaSyA0csK-ivtqwNi5WLV9nQ42oMrLJry92dg",
+    authDomain: "chat2go-2b.firebaseapp.com",
+    projectId: "chat2go-2b",
+    storageBucket: "chat2go-2b.firebasestorage.app",
+    messagingSenderId: "103840196617",
+    appId: "1:103840196617:web:f0f9081299190e1a27f0d8"
+  };
 
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-const $=s=>document.getElementById(s);
-const show=n=>["auth","home","chat"].forEach(s=>$(s).classList.toggle("on",s===n));
-const LOGO='<svg width="34" height="34" viewBox="0 0 40 40" aria-label="Logo Chat2Go"><path d="M8 4h24a6 6 0 0 1 6 6v15a6 6 0 0 1-6 6H20l-9 7v-7H8a6 6 0 0 1-6-6V10a6 6 0 0 1 6-6z" fill="#1d9bf0"/><text x="20" y="24" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="17" fill="#fff">2</text></svg>';
-document.querySelectorAll(".logo").forEach(e=>e.innerHTML=LOGO);
-let me=null,pseudo="",cid=null,unsubC=null,unsubM=null,list=[];const vus=new Set(),del=new Set();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-const err=t=>{$("er").textContent=t};
-const msg=e=>({"auth/invalid-credential":"Email ou mot de passe incorrect","auth/email-already-in-use":"Cet email est déjà utilisé","auth/weak-password":"Mot de passe trop court (6 minimum)","auth/invalid-email":"Email invalide"}[e.code]||"Erreur : "+(e.code||e.message));
+  const $ = (id) => document.getElementById(id);
+  const MESSAGE_DELAY = 6000;  // un texte disparaît 6 s après avoir été vu
+  const PHOTO_DELAY = 10000;   // une photo disparaît 10 s après avoir été vue
 
-$("su").onclick=async()=>{err("");const p=$("ps").value.trim().toLowerCase();
- if(!/^[a-z0-9_]{3,15}$/.test(p))return err("Pseudo : 3 à 15 lettres, chiffres ou _");
- try{const c=await createUserWithEmailAndPassword(auth,$("em").value.trim(),$("pw").value);
-  try{await setDoc(doc(db,"pseudos",p),{uid:c.user.uid})}catch(e){await c.user.delete();return err("Ce pseudo est déjà pris")}
-  await updateProfile(c.user,{displayName:p});pseudo=p;$("moi").textContent=p}catch(e){err(msg(e))}};
-$("si").onclick=async()=>{err("");try{await signInWithEmailAndPassword(auth,$("em").value.trim(),$("pw").value)}catch(e){err(msg(e))}};
-$("out").onclick=()=>signOut(auth);
+  let me = null;
+  let isSignup = false;
+  let unsubUsers = null;
+  let unsubChat = null;
+  let current = null;
+  let photoData = null;
+  const timers = new Set();
 
-onAuthStateChanged(auth,u=>{
- unsubC&&unsubC();unsubM&&unsubM();cid=null;
- if(!u){me=null;show("auth");return}
- me=u;pseudo=u.displayName||"";$("moi").textContent=pseudo;show("home");
- unsubC=onSnapshot(query(collection(db,"chats"),where("members","array-contains",u.uid)),s=>{
-  $("cl").textContent="";
-  s.docs.forEach(d=>{const c=d.data(),o=c.members.find(x=>x!==u.uid),b=document.createElement("button");b.className="row";b.textContent="💬 "+((c.names&&c.names[o])||"Ami");b.onclick=()=>ouvrirChat(d.id,(c.names&&c.names[o])||"Ami");$("cl").appendChild(b)});
-  if(!s.size)$("cl").textContent="Ajoute un ami avec son pseudo pour commencer."})});
+  /* ---------- Connexion / inscription ---------- */
+  $("authToggle").onclick = () => {
+    isSignup = !isSignup;
+    $("pseudo").classList.toggle("hidden", !isSignup);
+    $("authSubmit").textContent = isSignup ? "Créer mon compte" : "Se connecter";
+    $("authToggle").textContent = isSignup ? "Déjà un compte ? Se connecter" : "Pas de compte ? Créer un compte";
+    $("authError").textContent = "";
+  };
 
-$("ad").onclick=async()=>{const p=$("fp").value.trim().toLowerCase();if(!p)return;
- try{const s=await getDoc(doc(db,"pseudos",p));if(!s.exists())return alert("Pseudo introuvable");
-  const f=s.data().uid;if(f===me.uid)return alert("C’est ton propre pseudo !");
-  const id=[me.uid,f].sort().join("_");
-  await setDoc(doc(db,"chats",id),{members:[me.uid,f],names:{[me.uid]:pseudo,[f]:p}},{merge:true});
-  $("fp").value="";ouvrirChat(id,p)}catch(e){alert("Erreur : "+(e.code||e.message))}};
+  $("authSubmit").onclick = async () => {
+    const email = $("email").value.trim();
+    const password = $("password").value;
+    const pseudo = $("pseudo").value.trim();
+    $("authError").textContent = "";
+    try {
+      if (isSignup) {
+        if (!pseudo) { $("authError").textContent = "Choisis un pseudo."; return; }
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", cred.user.uid), { pseudo, createdAt: serverTimestamp() });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (e) {
+      $("authError").textContent = friendlyError(e.code);
+    }
+  };
 
-function ouvrirChat(id,nom){cid=id;$("cn").textContent=nom;list=[];vus.clear();del.clear();show("chat");unsubM&&unsubM();
- unsubM=onSnapshot(query(collection(db,"chats",id,"msgs"),orderBy("ts"),limit(60)),s=>{
-  list=s.docs.map(d=>{const x={...d.data(),id:d.id};if(!x.seen&&vus.has(d.id))x.seen=Date.now();return x});render()})}
-$("bk").onclick=()=>{unsubM&&unsubM();cid=null;show("home")};
+  function friendlyError(code) {
+    const map = {
+      "auth/invalid-email": "Cette adresse e-mail n’est pas valide.",
+      "auth/missing-password": "Entre ton mot de passe.",
+      "auth/weak-password": "Le mot de passe doit faire au moins 6 caractères.",
+      "auth/email-already-in-use": "Cette adresse e-mail a déjà un compte.",
+      "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
+      "auth/operation-not-allowed": "Active la connexion e-mail/mot de passe dans Firebase (Authentication).",
+      "permission-denied": "Accès refusé : vérifie les règles Firestore."
+    };
+    return map[code] || ("Erreur : " + code);
+  }
 
-const alive=m=>m.ts+864e5>Date.now()&&!(m.seen&&Date.now()>m.seen+5000);
-const ref=id=>doc(db,"chats",cid,"msgs",id);
-function render(){
- if(!cid)return;
- const box=$("msgs"),bas=box.scrollHeight-box.scrollTop-box.clientHeight<60;
- list.filter(m=>!alive(m)&&!del.has(m.id)).forEach(m=>{del.add(m.id);deleteDoc(ref(m.id)).catch(()=>{})});
- list=list.filter(alive);box.textContent="";
- if(!list.length){const d=document.createElement("div");d.className="vide";d.textContent="Aucun message. Écris-en un : il disparaîtra une fois lu.";box.appendChild(d)}
- list.forEach(m=>{
-  const mine=m.from===me.uid;
-  if(!mine&&!m.seen&&!vus.has(m.id)&&document.visibilityState==="visible"){vus.add(m.id);m.seen=Date.now();updateDoc(ref(m.id),{seen:m.seen}).catch(()=>{})}
-  const d=document.createElement("div");d.className="m"+(mine?" me":"");
-  const b=document.createElement("b");b.textContent=mine?"Toi"+(m.seen?" · Vu ✓":" · Envoyé"):(m.name||"Ami");
-  const ok=typeof m.img==="string"&&m.img.startsWith("data:image/jpeg;base64,");
-  const p=ok?Object.assign(document.createElement("img"),{src:m.img,alt:"Photo"}):document.createElement("span");if(!ok)p.textContent=m.text||"";
-  const i=document.createElement("i");i.style.transform="scaleX("+(m.seen?Math.max(0,(m.seen+5000-Date.now())/5000):1)+")";
-  d.append(b,p,i);box.appendChild(d)});
- if(bas)box.scrollTop=box.scrollHeight}
-setInterval(render,500);
+  $("logout").onclick = () => signOut(auth);
 
-const envoyer=m=>addDoc(collection(db,"chats",cid,"msgs"),{from:me.uid,name:pseudo,ts:Date.now(),...m}).catch(e=>alert("Envoi impossible : "+(e.code||e.message)));
-$("f").onsubmit=e=>{e.preventDefault();const text=$("t").value.trim();if(!text)return;$("t").value="";envoyer({text})};
+  onAuthStateChanged(auth, (user) => {
+    me = user;
+    if (user) {
+      $("auth").classList.add("hidden");
+      $("app").classList.remove("hidden");
+      showContacts();
+      listenUsers();
+    } else {
+      if (unsubUsers) unsubUsers();
+      if (unsubChat) unsubChat();
+      $("app").classList.add("hidden");
+      $("auth").classList.remove("hidden");
+    }
+  });
 
-/* Photos + filtres */
-const FX={"Normal":null,"N&B":(p,i)=>{const y=.3*p[i]+.59*p[i+1]+.11*p[i+2];p[i]=p[i+1]=p[i+2]=y},
-"Sépia":(p,i)=>{const r=p[i],g=p[i+1],b=p[i+2];p[i]=.393*r+.769*g+.189*b;p[i+1]=.349*r+.686*g+.168*b;p[i+2]=.272*r+.534*g+.131*b},
-"Chaud":(p,i)=>{p[i]=p[i]*1.1+10;p[i+2]=p[i+2]*.9},"Froid":(p,i)=>{p[i]=p[i]*.9;p[i+2]=p[i+2]*1.1+10},
-"Contraste":(p,i)=>{for(let k=0;k<3;k++)p[i+k]=(p[i+k]-128)*1.3+128},
-"Néon":(p,i)=>{const m=(p[i]+p[i+1]+p[i+2])/3;for(let k=0;k<3;k++)p[i+k]=m+(p[i+k]-m)*2.3;p[i+2]+=25},
-"Vintage":(p,i,x,y,w,h)=>{const dx=x/w-.5,dy=y/h-.5,v=1-Math.min(1,(dx*dx+dy*dy)*2.2);p[i]=(p[i]*.9+30)*v;p[i+1]=(p[i+1]*.85+20)*v;p[i+2]=(p[i+2]*.7+30)*v},
-"Doré":(p,i)=>{p[i]=p[i]*1.15+25;p[i+1]=p[i+1]*1.05+12;p[i+2]=p[i+2]*.7},
-"Arc-en-ciel":(p,i,x,y,w)=>{const a=x/w*6;p[i]=p[i]*.72+(128+127*Math.sin(a))*.28;p[i+1]=p[i+1]*.72+(128+127*Math.sin(a+2.1))*.28;p[i+2]=p[i+2]*.72+(128+127*Math.sin(a+4.2))*.28},
-"Négatif":(p,i)=>{p[i]=255-p[i];p[i+1]=255-p[i+1];p[i+2]=255-p[i+2]}};
-const tmp=(c,d)=>{const s=document.createElement("canvas");s.width=Math.ceil(c.width/d);s.height=Math.ceil(c.height/d);s.getContext("2d").drawImage(c,0,0,s.width,s.height);return s};
-const POST={"Pixel":(x,c,w,h)=>{const s=tmp(c,14);x.imageSmoothingEnabled=false;x.drawImage(s,0,0,s.width,s.height,0,0,w,h)},
-"Glitch":(x,c,w,h)=>{const o=tmp(c,1);for(let k=0;k<9;k++){const y=Math.random()*h,bh=h*(.02+Math.random()*.06),dx=(Math.random()-.5)*w*.12;x.drawImage(o,0,y,w,bh,dx,y,w,bh)}x.globalAlpha=.35;x.globalCompositeOperation="lighter";x.drawImage(o,6,0);x.globalAlpha=1;x.globalCompositeOperation="source-over"},
-"Rêve":(x,c,w,h)=>{const s=tmp(c,8);x.globalAlpha=.5;x.globalCompositeOperation="screen";x.drawImage(s,0,0,w,h);x.globalAlpha=1;x.globalCompositeOperation="source-over"}};
-let base=null,fx="Normal",st=[],sel=null;
-function appliquer(){const pc=$("pc"),w=base.width,h=base.height;pc.width=w;pc.height=h;const x=pc.getContext("2d");x.drawImage(base,0,0);const f=FX[fx];
- if(f){const d=x.getImageData(0,0,w,h),p=d.data;for(let i=0;i<p.length;i+=4)f(p,i,(i/4)%w,Math.floor(i/4/w),w,h);x.putImageData(d,0,0)}
- if(POST[fx])POST[fx](x,pc,w,h);
- st.forEach(s=>{x.font=Math.round(w*.2)+"px serif";x.textAlign="center";x.textBaseline="middle";x.fillText(s.e,s.x*w,s.y*h)});
- const t=$("leg").value.trim();if(t){x.fillStyle="rgba(0,0,0,.55)";x.fillRect(0,h*.82,w,h*.1);x.fillStyle="#fff";x.font="bold "+Math.round(h*.055)+"px system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(t,w/2,h*.87,w*.94)}}
-function ouvrir(c){base=c;fx="Normal";st=[];sel=null;$("leg").value="";$("fxs").textContent="";
- Object.keys({...FX,...POST}).forEach(n=>{const b=document.createElement("button");b.type="button";b.className="alt";b.textContent=n;b.onclick=()=>{fx=n;appliquer()};$("fxs").appendChild(b)});
- $("sts").textContent="";["🐶","👑","😎","❤️","✨","🌈","🔥","🎀","😈","🌸","↩"].forEach(e=>{const b=document.createElement("button");b.type="button";b.className="alt";b.textContent=e;b.onclick=()=>{if(e==="↩"){st.pop();appliquer()}else sel=e};$("sts").appendChild(b)});
- appliquer();$("pv").style.display="flex"}
-$("ph").onclick=()=>$("file").click();
-$("file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
- const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,480/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ouvrir(c)};im.src=r.result};r.readAsDataURL(f)};
-$("pc").onclick=e=>{if(!sel)return;const r=e.target.getBoundingClientRect();st.push({e:sel,x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height});appliquer()};
-$("leg").oninput=()=>appliquer();
-$("pn").onclick=()=>{$("pv").style.display="none"};
-$("po").onclick=()=>{envoyer({text:"",img:$("pc").toDataURL("image/jpeg",.6)});$("pv").style.display="none"};
+  /* ---------- Liste des contacts ---------- */
+  function listenUsers() {
+    if (unsubUsers) unsubUsers();
+    unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
+      const box = $("contacts");
+      box.innerHTML = "";
+      let count = 0;
+      snap.forEach((d) => {
+        if (d.id === me.uid) return;
+        count++;
+        const u = d.data();
+        const b = document.createElement("button");
+        b.className = "contact";
+        const av = document.createElement("div");
+        av.className = "avatar";
+        av.textContent = (u.pseudo || "?").charAt(0).toUpperCase();
+        const name = document.createElement("span");
+        name.textContent = u.pseudo || "Sans pseudo";
+        b.append(av, name);
+        b.onclick = () => openChat(d.id, u.pseudo);
+        box.appendChild(b);
+      });
+      if (!count) {
+        box.innerHTML = '<div class="empty">Personne d’autre n’est inscrit pour l’instant.<br>Invite un ami à créer son compte pour discuter.</div>';
+      }
+    }, (e) => { $("contacts").textContent = friendlyError(e.code); });
+  }
 
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  function showContacts() {
+    if (unsubChat) { unsubChat(); unsubChat = null; }
+    current = null;
+    clearTimers();
+    $("chat").classList.add("hidden");
+    $("contacts").classList.remove("hidden");
+    $("back").classList.add("hidden");
+    $("title").textContent = "Chat2Go";
+  }
+  $("back").onclick = showContacts;
+
+  /* ---------- Conversation ---------- */
+  function openChat(otherId, pseudo) {
+    current = { id: otherId, chatId: [me.uid, otherId].sort().join("_") };
+    $("contacts").classList.add("hidden");
+    $("chat").classList.remove("hidden");
+    $("back").classList.remove("hidden");
+    $("title").textContent = pseudo || "Conversation";
+    $("appError").textContent = "";
+
+    if (unsubChat) unsubChat();
+    const q = query(collection(db, "chats", current.chatId, "messages"), orderBy("createdAt"));
+    unsubChat = onSnapshot(q, renderMessages, (e) => { $("appError").textContent = friendlyError(e.code); });
+  }
+
+  function clearTimers() { timers.forEach(clearTimeout); timers.clear(); }
+
+  const scheduled = new Set();
+  function renderMessages(snap) {
+    const box = $("messages");
+    box.innerHTML = "";
+    if (snap.empty) {
+      box.innerHTML = '<div class="empty">Aucun message. Écris le premier !</div>';
+    }
+    snap.forEach((d) => {
+      const m = d.data();
+      const mine = m.from === me.uid;
+      const el = document.createElement("div");
+      el.className = "msg " + (mine ? "mine" : "theirs");
+      if (m.photo) {
+        const img = document.createElement("img");
+        img.src = m.photo;
+        if (m.filter && m.filter !== "none") img.style.filter = m.filter;
+        el.appendChild(img);
+      }
+      if (m.text) {
+        const t = document.createElement("span");
+        t.textContent = m.text;
+        el.appendChild(t);
+      }
+      const hint = document.createElement("span");
+      hint.className = "hint";
+      hint.textContent = mine ? "Disparaît après lecture" : "Disparaît dans quelques secondes";
+      el.appendChild(hint);
+      box.appendChild(el);
+
+      // Le destinataire a vu le message : on le supprime après un court délai.
+      if (!mine && document.visibilityState === "visible" && !scheduled.has(d.id)) {
+        scheduled.add(d.id);
+        const t = setTimeout(() => {
+          deleteDoc(d.ref).catch(() => {});
+          scheduled.delete(d.id);
+        }, m.photo ? PHOTO_DELAY : MESSAGE_DELAY);
+        timers.add(t);
+      }
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
+  /* ---------- Envoi ---------- */
+  async function send() {
+    const text = $("text").value.trim();
+    if (!text && !photoData) return;
+    $("appError").textContent = "";
+    try {
+      await addDoc(collection(db, "chats", current.chatId, "messages"), {
+        from: me.uid,
+        to: current.id,
+        text,
+        photo: photoData || null,
+        filter: photoData ? $("filter").value : "none",
+        createdAt: serverTimestamp()
+      });
+      $("text").value = "";
+      clearPhoto();
+    } catch (e) {
+      $("appError").textContent = friendlyError(e.code);
+    }
+  }
+  $("send").onclick = send;
+  $("text").addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+
+  /* ---------- Photos ---------- */
+  $("photoBtn").onclick = () => $("photoInput").click();
+  $("cancelPhoto").onclick = clearPhoto;
+  $("filter").onchange = () => {
+    const f = $("filter").value;
+    $("previewImg").style.filter = f === "none" ? "" : f;
+  };
+
+  function clearPhoto() {
+    photoData = null;
+    $("photoInput").value = "";
+    $("preview").classList.add("hidden");
+    $("previewImg").style.filter = "";
+    $("filter").value = "none";
+  }
+
+  // La photo est réduite puis stockée dans Firestore : pas besoin de Storage (gratuit).
+  $("photoInput").onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      const max = 720;
+      const ratio = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * ratio);
+      c.height = Math.round(img.height * ratio);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      photoData = c.toDataURL("image/jpeg", 0.6);
+      $("previewImg").src = photoData;
+      $("preview").classList.remove("hidden");
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+  };
 </script>
 </body>
 </html>
